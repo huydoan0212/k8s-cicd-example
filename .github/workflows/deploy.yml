@@ -13,21 +13,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up kubectl
+      - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
 
-      - name: Configure kubeconfig
+      - name: Configure Kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > ~/.kube/config
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Verify cluster connectivity
-        run: kubectl get nodes
+        run: |
+          kubectl version --client
+          kubectl cluster-info
+          kubectl get nodes
 
-      - name: Deploy to Kubernetes
+      - name: Deploy manifests
         run: kubectl apply -f nginx-deployment.yaml
 
       - name: Wait for Deployment rollout
